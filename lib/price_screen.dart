@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'coin_data.dart';
+import 'coin_data.dart';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -18,13 +19,14 @@ class _PriceScreenState extends State<PriceScreen> {
   @override
   void initState() {
     super.initState();
-    getPriceData();
+    getPriceData(currency: selectedCurrency);
   }
 
-  void getPriceData() async {
+  void getPriceData({String currency}) async {
     double rate = await coinData.getCoinData(
-        criptoCurrency: cryptoList[0], currency: selectedCurrency);
+        criptoCurrency: cryptoList[0], currency: currency);
     setState(() {
+      selectedCurrency = currency;
       currencyRate = rate;
     });
   }
@@ -33,7 +35,12 @@ class _PriceScreenState extends State<PriceScreen> {
     return CupertinoPicker(
       itemExtent: 32,
       backgroundColor: Colors.lightBlue,
-      onSelectedItemChanged: (selectedIndex) {},
+      onSelectedItemChanged: (selectedIndex) {
+        getPriceData(currency: currenciesList[selectedIndex]);
+      },
+      scrollController: FixedExtentScrollController(
+        initialItem: getCurrencyIndex('USD')
+      ),
       children: getMenuWidgets(),
     );
   }
@@ -43,9 +50,7 @@ class _PriceScreenState extends State<PriceScreen> {
       value: selectedCurrency,
       items: getMenuItems(),
       onChanged: (value) {
-        setState(() {
-          selectedCurrency = value;
-        });
+        getPriceData(currency: value);
       },
     );
   }
@@ -92,7 +97,7 @@ class _PriceScreenState extends State<PriceScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
                 child: Text(
-                  '1 BTC = ${currencyRate.toInt()} USD',
+                  '1 BTC = ${currencyRate.toInt()} $selectedCurrency',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20.0,

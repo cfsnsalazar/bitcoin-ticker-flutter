@@ -33,6 +33,17 @@ const List<String> cryptoList = [
   'LTC',
 ];
 
+int getCurrencyIndex(String currency){
+  int position = 0;
+  for(String element in currenciesList){
+    if(element == currency){
+      return position;
+    }
+    position ++;
+  }
+  return 0;
+}
+
 class CoinData {
   Future<double> getCoinData({String criptoCurrency, String currency}) async{
     var response = await http.get('https://rest.coinapi.io/v1/exchangerate/$criptoCurrency/$currency?apikey=7381723F-A3AF-4C9C-85E0-5B3EB0CC21D3');
