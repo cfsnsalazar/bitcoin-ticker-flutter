@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
 
 import 'package:http/http.dart' as http;
 
@@ -45,8 +44,31 @@ int getCurrencyIndex(String currency){
 }
 
 class CoinData {
-  Future<double> getCoinData({String criptoCurrency, String currency}) async{
-    var response = await http.get('https://rest.coinapi.io/v1/exchangerate/$criptoCurrency/$currency?apikey=7381723F-A3AF-4C9C-85E0-5B3EB0CC21D3');
+  Map<String, double> _cryptoRates = Map();
+  String _selectedCurrency = 'USD';
+
+  CoinData(this._selectedCurrency);
+
+  Future<void> retrieveRates() async {
+    await Future.forEach(cryptoList, (element) async {
+      double rate = await _getCoinData(
+          criptoCurrency: element,
+          currency: _selectedCurrency
+      );
+      _cryptoRates[element] = rate;
+    });
+  }
+
+  String getRate({String cryptoCurrency}){
+    return _cryptoRates[cryptoCurrency] != null ? '${_cryptoRates[cryptoCurrency].toInt()}' : '?';
+  }
+
+  String getSelectedCurrency(){
+    return _selectedCurrency;
+  }
+  
+  Future<double> _getCoinData({String criptoCurrency, String currency}) async{
+    var response = await http.get('https://rest.coinapi.io/v1/exchangerate/$criptoCurrency/$currency?apikey=F7D595ED-2FD0-480B-839E-3B90765BBC77');
     var data = jsonDecode(response.body);
     try{
       return data['rate'];

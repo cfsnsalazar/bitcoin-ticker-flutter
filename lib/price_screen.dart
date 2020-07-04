@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'coin_data.dart';
-import 'coin_data.dart';
 
 class PriceScreen extends StatefulWidget {
   @override
@@ -12,23 +11,12 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
-  String selectedCurrency = 'USD';
-  double currencyRate = 0.0;
-  CoinData coinData = CoinData();
+  CoinData coinData = CoinData('USD');
 
   @override
   void initState() {
     super.initState();
-    getPriceData(currency: selectedCurrency);
-  }
-
-  void getPriceData({String currency}) async {
-    double rate = await coinData.getCoinData(
-        criptoCurrency: cryptoList[0], currency: currency);
-    setState(() {
-      selectedCurrency = currency;
-      currencyRate = rate;
-    });
+    updateCoinData(CoinData('USD'));
   }
 
   CupertinoPicker getIOSPicker() {
@@ -36,21 +24,30 @@ class _PriceScreenState extends State<PriceScreen> {
       itemExtent: 32,
       backgroundColor: Colors.lightBlue,
       onSelectedItemChanged: (selectedIndex) {
-        getPriceData(currency: currenciesList[selectedIndex]);
+        setState(() {
+          updateCoinData(CoinData(currenciesList[selectedIndex]));
+        });
       },
       scrollController: FixedExtentScrollController(
-        initialItem: getCurrencyIndex('USD')
+        initialItem: getCurrencyIndex(coinData.getSelectedCurrency())
       ),
       children: getMenuWidgets(),
     );
   }
 
+  void updateCoinData(CoinData newCoinData) async {
+    await newCoinData.retrieveRates();
+    setState(() {
+      coinData = newCoinData;
+    });
+  }
+
   DropdownButton<String> getAndroidPicker() {
     return DropdownButton<String>(
-      value: selectedCurrency,
+      value: coinData.getSelectedCurrency(),
       items: getMenuItems(),
       onChanged: (value) {
-        getPriceData(currency: value);
+        updateCoinData(CoinData(value));
       },
     );
   }
@@ -76,6 +73,38 @@ class _PriceScreenState extends State<PriceScreen> {
     return items;
   }
 
+  Widget getCryptoCurrencyCard({String cryptoCurrency}) {
+    return Padding(
+      padding: EdgeInsets.only(left: 24, right: 24, top: 16),
+      child: Card(
+        color: Colors.lightBlueAccent,
+        elevation: 5.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
+          child: Text(
+            '1 $cryptoCurrency = ${coinData.getRate(cryptoCurrency: cryptoCurrency)} ${coinData.getSelectedCurrency()}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20.0,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> getCryptoCards() {
+    List<Widget> cards = [];
+    cryptoList.forEach((element) {
+      cards.add(getCryptoCurrencyCard(cryptoCurrency: element));
+    });
+    return cards;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,35 +114,19 @@ class _PriceScreenState extends State<PriceScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ${currencyRate.toInt()} $selectedCurrency',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: getCryptoCards(),
+          )
+          ,
           Container(
               height: 150.0,
               alignment: Alignment.center,
               padding: EdgeInsets.only(bottom: 30.0),
               color: Colors.lightBlue,
-              child: Platform.isIOS ? getIOSPicker() : getAndroidPicker()),
-        ],
+              child: Platform.isIOS ? getIOSPicker() : getAndroidPicker())
+        ]
       ),
     );
   }
